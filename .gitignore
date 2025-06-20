@@ -1,3 +1,7 @@
-logs*
+/logs/
+/results/
+/processed_data/
+/evaluation_logs/
+/sql_llama_finetuned/
 dependency_install_enhanced.log
 =0.41.1
