@@ -40,19 +40,21 @@ def preprocess_spider(save_path="processed_data"):
     print(f"Dados processados salvos em {save_path}")
 
 def create_prompt(question, few_shot_examples, include_answer=True):
-    """Cria prompt no formato ministral instruct"""
+    """Cria prompt no formato Zephyr-7B-beta"""
     system_msg = "You are a SQL expert. Convert the following natural language questions to SQL queries."
-    prompt = f"[SYS]{system_msg}[/SYS]\n\n"
     
-    # Adicionar exemplos few-shot
+    # Inicia o prompt com o template do sistema
+    prompt = f"<|system|>\n{system_msg}</s>\n"
+    
+    # Adicionar exemplos few-shot (cada exemplo como um diálogo completo)
     for ex in few_shot_examples:
-        prompt += f"[INST]Question: {ex['question']}[/INST]\n"
-        prompt += f"SQL: {ex['query']}\n\n"
+        prompt += f"<|user|>\nQuestion: {ex['question']}</s>\n"
+        prompt += f"<|assistant|>\nSQL: {ex['query']}</s>\n"
     
     # Adicionar pergunta atual
-    prompt += f"[INST]Question: {question}[/INST]\n"
+    prompt += f"<|user|>\nQuestion: {question}</s>\n"
     if include_answer:
-        prompt += "SQL:"
+        prompt += "<|assistant|>\nSQL:"
     
     return prompt
 

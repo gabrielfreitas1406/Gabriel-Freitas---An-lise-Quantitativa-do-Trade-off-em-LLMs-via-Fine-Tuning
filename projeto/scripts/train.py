@@ -36,8 +36,8 @@ def print_trainable_parameters(model):
 
 def train_model():
     # 1. Configurações iniciais
-    model_name = "mistralai/Mistral-7B-Instruct-v0.2" #meta-llama/Llama-3-8B-Instruct
-    output_dir = f"results/sql-ministal-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+    model_name =  "HuggingFaceH4/zephyr-7b-beta" #"mistralai/Mistral-7B-Instruct-v0.2" #meta-llama/Llama-3-8B-Instruct
+    output_dir = f"results/sql-zephyr-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
     os.makedirs(output_dir, exist_ok=True)
     
     # 2. Carregar dados processados
@@ -45,12 +45,14 @@ def train_model():
     
     # 3. Configuração do modelo com quantização 4-bit
     device_map = {
-    "model.embed_tokens": 0,        # Embeddings na GPU
-    "model.layers.0": 0,            # Primeira camada na GPU
-    "model.layers.1": 0,            # Segunda camada na GPU
-    "model.norm": "cpu",            # Normalização na CPU
-    "lm_head": "cpu",               # Camada final na CPU
-    "__": "cpu"                     # Todo o resto na CPU
+        "model.embed_tokens": 0,
+        "model.layers.0": 0,
+        "model.layers.1": 0,
+        "model.layers.2": 0, 
+        "model.layers.3": 0,
+        "model.norm": "cpu",
+        "lm_head": "cpu",
+        "__": "cpu"
     }
 
     bnb_config = BitsAndBytesConfig(
@@ -90,8 +92,8 @@ def train_model():
         modules_to_save=["lm_head", "embed_tokens"]  # Camadas adicionais para adaptação
     )'''
     peft_config = LoraConfig(
-        r=8,  
-        lora_alpha=16,
+        r=4,  
+        lora_alpha=8,
         target_modules=["q_proj", "v_proj"],  # Apenas Q e V
         lora_dropout=0.05,
         bias="none",
