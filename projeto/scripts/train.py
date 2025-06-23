@@ -44,20 +44,32 @@ def train_model():
     train_data, val_data = load_processed_data()
     
     # 3. Configuração do modelo com quantização 4-bit
+    device_map = {
+    "model.embed_tokens": 0,        # Embeddings na GPU
+    "model.layers.0": 0,            # Primeira camada na GPU
+    "model.layers.1": 0,            # Segunda camada na GPU
+    "model.norm": "cpu",            # Normalização na CPU
+    "lm_head": "cpu",               # Camada final na CPU
+    "__": "cpu"                     # Todo o resto na CPU
+    }
+
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
         bnb_4bit_quant_type="nf4",
         bnb_4bit_compute_dtype=torch.float16,
-        bnb_4bit_use_double_quant=True
+        bnb_4bit_use_double_quant=True,
+        llm_int8_enable_fp32_cpu_offload=True  
     )
     
     # Carregar modelo e tokenizador
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
         quantization_config=bnb_config,
-        device_map="auto",
+        device_map=device_map,
         torch_dtype=torch.float16,
-        attn_implementation="flash_attention_2" if torch.cuda.is_available() else None
+        offload_folder="offload",
+        offload_state_dict=True,
+        #force_embed_tokens_to_device=0 if torch.cuda.is_available() else "cpu"
     )
     
     tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -68,7 +80,7 @@ def train_model():
     model = prepare_model_for_kbit_training(model)
     
     # 4. Configuração LoRA
-    peft_config = LoraConfig(
+    '''peft_config = LoraConfig(
         r=16,  # Rank
         lora_alpha=32,
         target_modules=["q_proj", "v_proj", "k_proj", "o_proj"],
@@ -76,6 +88,15 @@ def train_model():
         bias="none",
         task_type="CAUSAL_LM",
         modules_to_save=["lm_head", "embed_tokens"]  # Camadas adicionais para adaptação
+    )'''
+    peft_config = LoraConfig(
+        r=8,  
+        lora_alpha=16,
+        target_modules=["q_proj", "v_proj"],  # Apenas Q e V
+        lora_dropout=0.05,
+        bias="none",
+        task_type="CAUSAL_LM"
+        
     )
     
     model = get_peft_model(model, peft_config)
@@ -84,9 +105,9 @@ def train_model():
     # 5. Configuração do treinamento
     training_args = TrainingArguments(
         output_dir=output_dir,
-        per_device_train_batch_size=4,
-        per_device_eval_batch_size=4,
-        gradient_accumulation_steps=4,
+        per_device_train_batch_size=1,  
+        per_device_eval_batch_size=1,
+        gradient_accumulation_steps=8,
         learning_rate=1e-4,
         optim="paged_adamw_32bit",
         num_train_epochs=5,

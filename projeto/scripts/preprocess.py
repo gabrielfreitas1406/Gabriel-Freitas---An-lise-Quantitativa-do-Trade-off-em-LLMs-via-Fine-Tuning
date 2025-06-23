@@ -40,7 +40,7 @@ def preprocess_spider(save_path="processed_data"):
     print(f"Dados processados salvos em {save_path}")
 
 def create_prompt(question, few_shot_examples, include_answer=True):
-    """Cria prompt no formato LLaMA-2/3 instruct"""
+    """Cria prompt no formato ministral instruct"""
     system_msg = "You are a SQL expert. Convert the following natural language questions to SQL queries."
     prompt = f"[SYS]{system_msg}[/SYS]\n\n"
     
