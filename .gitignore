@@ -5,3 +5,4 @@
 /sql_llama_finetuned/
 dependency_install_enhanced.log
 =0.41.1
+.env
