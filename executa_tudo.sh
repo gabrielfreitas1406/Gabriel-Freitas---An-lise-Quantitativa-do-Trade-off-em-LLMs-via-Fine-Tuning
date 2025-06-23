@@ -51,17 +51,19 @@ echo "Instalando pacotes Python..."
 
 # Lista de pacotes necessários
 PACKAGES=(
-    "torch>=2.0.0"
-    "transformers>=4.40.0"
-    "datasets>=2.18.0"
+    "torch>=2.6.0"
+    "torchvision==0.21.0+cu124"
+    "torchaudio==2.6.0+cu124"
+    "transformers>=4.41.0"
+    "datasets>=2.19.0"
     "peft>=0.10.0"
-    "trl>=0.7.11"
-    "bitsandbytes>=0.42.0"
-    "accelerate>=0.27.2"
+    "trl>=0.8.6"
+    "bitsandbytes>=0.43.0"
+    "accelerate>=0.29.0"
     "deepeval>=0.17.0"
     "sqlalchemy>=2.0.0"
     "tensorboard>=2.15.0"
-    "huggingface-hub>=0.20.0"
+    "huggingface-hub>=0.27.0"
 )
 
 # Instalar cada pacote se não estiver instalado

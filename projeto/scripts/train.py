@@ -71,7 +71,7 @@ def train_model():
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
         quantization_config=bnb_config,
-        device_map=device_map,
+        device_map="auto",
         torch_dtype=torch.float16,
         offload_folder="offload",
         offload_state_dict=True,
