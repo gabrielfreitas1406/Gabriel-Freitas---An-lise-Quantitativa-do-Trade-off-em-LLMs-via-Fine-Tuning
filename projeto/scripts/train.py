@@ -35,8 +35,12 @@ def print_trainable_parameters(model):
     )
 
 def train_model():
+
+    os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "1"  # Acelera download
+    os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"  # Reduz logs
+
     # 1. Configurações iniciais
-    model_name =  "HuggingFaceH4/zephyr-7b-beta" #"mistralai/Mistral-7B-Instruct-v0.2" #meta-llama/Llama-3-8B-Instruct
+    model_name =  "HuggingFaceH4/zephyr-7b-alpha" #"mistralai/Mistral-7B-Instruct-v0.2" #meta-llama/Llama-3-8B-Instruct
     output_dir = f"results/sql-zephyr-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
     os.makedirs(output_dir, exist_ok=True)
     
