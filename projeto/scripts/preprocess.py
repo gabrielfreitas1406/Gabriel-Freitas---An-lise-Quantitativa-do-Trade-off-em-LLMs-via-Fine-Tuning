@@ -53,7 +53,7 @@ def create_prompt(question, few_shot_examples, include_answer=True):
     
     # Adicionar pergunta atual
     prompt += f"<|user|>\nQuestion: {question}</s>\n"
-    if include_answer:
+    if include_answer:  
         prompt += "<|assistant|>\nSQL:"
     
     return prompt
