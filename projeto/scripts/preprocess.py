@@ -40,23 +40,41 @@ def preprocess_spider(save_path="processed_data"):
     print(f"Dados processados salvos em {save_path}")
 
 def create_prompt(question, few_shot_examples, include_answer=True):
-    """Cria prompt no formato Zephyr-7B-beta"""
+    """
+    Cria prompt no formato do modelo google/gemma-2b-it.
+    """
     system_msg = "You are a SQL expert. Convert the following natural language questions to SQL queries."
-    
-    # Inicia o prompt com o template do sistema
-    prompt = f"<|system|>\n{system_msg}</s>\n"
-    
-    # Adicionar exemplos few-shot (cada exemplo como um diálogo completo)
+
+    # Começa com uma instrução de sistema (opcional, mas ajuda a alinhar)
+    prompt = (
+        "<start_of_turn>user\n"
+        f"{system_msg}\n"
+        "<end_of_turn>\n"
+    )
+
+    # Adiciona exemplos few-shot
     for ex in few_shot_examples:
-        prompt += f"<|user|>\nQuestion: {ex['question']}</s>\n"
-        prompt += f"<|assistant|>\nSQL: {ex['query']}</s>\n"
-    
-    # Adicionar pergunta atual
-    prompt += f"<|user|>\nQuestion: {question}</s>\n"
-    if include_answer:  
-        prompt += "<|assistant|>\nSQL:"
-    
+        prompt += (
+            "<start_of_turn>user\n"
+            f"Question: {ex['question']}\n"
+            "<end_of_turn>\n"
+            "<start_of_turn>model\n"
+            f"SQL: {ex['query']}\n"
+            "<end_of_turn>\n"
+        )
+
+    # Adiciona a pergunta atual
+    prompt += (
+        "<start_of_turn>user\n"
+        f"Question: {question}\n"
+        "<end_of_turn>\n"
+    )
+
+    if include_answer:
+        prompt += "<start_of_turn>model\nSQL:"
+
     return prompt
+
 
 if __name__ == "__main__":
     preprocess_spider()

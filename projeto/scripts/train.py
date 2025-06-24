@@ -7,7 +7,9 @@ from transformers import (
     EarlyStoppingCallback
 )
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
-from trl import SFTTrainer
+from trl import SFTConfig, SFTTrainer
+
+
 import torch
 import os
 from datetime import datetime
@@ -40,8 +42,8 @@ def train_model():
     os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"  # Reduz logs
 
     # 1. Configurações iniciais
-    model_name =  "HuggingFaceH4/zephyr-7b-alpha" #"mistralai/Mistral-7B-Instruct-v0.2" #meta-llama/Llama-3-8B-Instruct
-    output_dir = f"results/sql-zephyr-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+    model_name =  "google/gemma-2b-it" #"mistralai/Mistral-7B-Instruct-v0.2" #meta-llama/Llama-3-8B-Instruct
+    output_dir = f"results/sql-gemma-{datetime.now().strftime('%Y%m%d-%H%M%S').replace(':', '-')}"
     os.makedirs(output_dir, exist_ok=True)
     
     # 2. Carregar dados processados
@@ -76,9 +78,9 @@ def train_model():
         offload_folder="offload",
         offload_state_dict=True,
         #force_embed_tokens_to_device=0 if torch.cuda.is_available() else "cpu"
-    )
+    ) 
     
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer = AutoTokenizer.from_pretrained(model_name, legacy=False)
     tokenizer.pad_token = tokenizer.eos_token
     tokenizer.padding_side = "right"
     
@@ -109,7 +111,7 @@ def train_model():
     print_trainable_parameters(model)
     
     # 5. Configuração do treinamento
-    training_args = TrainingArguments(
+    training_args = SFTConfig(
         output_dir=output_dir,
         per_device_train_batch_size=1,  
         per_device_eval_batch_size=1,
@@ -120,7 +122,7 @@ def train_model():
         weight_decay=0.01,
         warmup_ratio=0.03,
         lr_scheduler_type="cosine",
-        evaluation_strategy="steps",
+        eval_strategy="steps",
         eval_steps=200,
         save_strategy="steps",
         save_steps=200,
@@ -135,21 +137,50 @@ def train_model():
         greater_is_better=False,
         group_by_length=True,
         dataloader_pin_memory=True,
-        dataloader_num_workers=4
+        dataloader_num_workers=4,
+        dataset_text_field="text",
     )
     
     # 6. Inicializar Trainer
+
+    training_args = SFTConfig(
+        output_dir=output_dir,
+        per_device_train_batch_size=1,
+        per_device_eval_batch_size=1,
+        gradient_accumulation_steps=8,
+        learning_rate=1e-4,
+        optim="paged_adamw_32bit",
+        num_train_epochs=5,
+        weight_decay=0.01,
+        warmup_ratio=0.03,
+        lr_scheduler_type="cosine",
+        eval_strategy="steps",
+        eval_steps=200,
+        save_strategy="steps",
+        save_steps=200,
+        logging_steps=50,
+        load_best_model_at_end=True,
+        report_to="tensorboard",
+        save_total_limit=3,
+        fp16=True,
+        gradient_checkpointing=True,
+        remove_unused_columns=False,
+        metric_for_best_model="eval_loss",
+        greater_is_better=False,
+        group_by_length=True,
+        dataloader_pin_memory=True,
+        dataloader_num_workers=4,
+        dataset_text_field="text",     
+        max_seq_length=1024,          
+    )
+
     trainer = SFTTrainer(
         model=model,
         args=training_args,
         train_dataset=train_data,
         eval_dataset=val_data,
-        dataset_text_field="text",
-        max_seq_length=1024,
-        tokenizer=tokenizer,
-        packing=False,
         callbacks=[EarlyStoppingCallback(early_stopping_patience=3)],
-        neftune_noise_alpha=5  # Regularização NEFTune
+
     )
     
     # 7. Treinamento
